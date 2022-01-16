@@ -12,9 +12,8 @@ int main() {
 
   // There is an infinite loop if file is to small
 
-//  config.text_lengths = {20, 100, 1 KB, 2 KB, 100 KB, 116 KB};
-  config.text_lengths = { 1 KB};
-  config.number_of_repetitions = 1;
+  config.text_lengths = {20, 100, 1 KB, 2 KB, 100 KB, 116 KB};
+  config.number_of_repetitions = 100;
 
   // WARN: Not cleaning up the executors
   Harness h(config, {{"RLE", new Rle}, {"LZW", new Lzw}}, {"./makbet.txt", "./lena.jpg"});

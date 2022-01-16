@@ -5,7 +5,7 @@
 #include <cassert>
 #include "Rle.h"
 TimeAndValue<void> Rle::Compress(const std::string &text) {
-  std::stringstream output;
+  std::vector<int> output;
   auto start = std::chrono::high_resolution_clock::now();
   assert(!text.empty());
   size_t counter = 1;
@@ -15,16 +15,18 @@ TimeAndValue<void> Rle::Compress(const std::string &text) {
     if (last_char == c) {
       counter++;
     } else {
-      output << counter << last_char;
+      output.push_back(counter);
+      output.push_back(last_char);
 
       counter = 1;
       last_char = c;
     }
   }
   // WARN: This might be wrong - fix for missing last letter
-  output << counter << last_char;
+  output.push_back(counter);
+  output.push_back(last_char);
   auto end = std::chrono::high_resolution_clock::now();
-  compressed_data_ = output.str();
+  compressed_data_ = output;
   return TimeAndValue<void>(
       std::chrono::duration_cast<std::chrono::microseconds>(end - start));
 }
@@ -34,7 +36,7 @@ TimeAndValue<std::string> Rle::Decompress() {
 
   auto start = std::chrono::high_resolution_clock::now();
   for (size_t i = 0; i < compressed_data_.size(); i += 2) {
-    size_t counter = compressed_data_[i] - '0';
+    size_t counter = compressed_data_[i];
     char c = compressed_data_[i + 1];
     while (counter--) {
       output << c;

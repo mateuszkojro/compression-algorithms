@@ -16,7 +16,7 @@ class Rle : public Compressor {
   size_t CompressedSize() override;
 
  private:
-  std::string compressed_data_;
+  std::vector<int> compressed_data_;
 };
 
 #endif //TEST_APPLICATION_SRC_RLE_RLE_H_
