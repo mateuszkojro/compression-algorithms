@@ -1,0 +1,209 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{amsmath, amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage{macros}
+\usepackage{minted}
+\usemintedstyle{trac}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern} 
+
+\usefonttheme{serif}
+
+% \usepackage{pgfpages}
+% \pgfpagesuselayout{resize to}[a4paper,border shrink=5mm,landscape]
+
+% \usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+
+\definecolor{Black}{rgb}{0,0,0}
+
+
+% Make 
+\setbeamertemplate{frametitle}{
+    \color{black}
+    \insertframetitle{}
+    \par
+    \vskip-6pt
+    \hrulefill}
+    
+    % Set slide title color
+    \setbeamercolor{title}{fg=Black} 
+    
+    \setbeamertemplate{itemize items}[default]
+    \setbeamertemplate{enumerate items}[default]
+    
+    \setbeamertemplate{itemize items}[circle]
+    \setbeamercolor{itemize item}{fg=Black}
+    \setbeamercolor{itemize subitem}{fg=Black}
+    \setbeamercolor{itemize subsubitem}{fg=Black}
+    
+    
+    \setbeamercolor{enumerate item}{fg=Black}
+    \setbeamercolor{enumerate subitem}{fg=Black}
+    \setbeamercolor{enumerate subsubitem}{fg=Black}
+    
+    
+    % --- page number ---
+    \setbeamertemplate{footline}{%
+	\raisebox{10pt}{\makebox[\paperwidth]{\hfill\makebox[7em]{\normalsize\texttt{\insertframenumber/\inserttotalframenumber}}}}%
+    }
+    
+    % Presenter's note
+% \setbeameroption{show notes on second screen}
+
+\title{Bezstratne algorytmy kompresji}
+\subtitle{Złożoność obliczeniowa algorytmow}
+\author{Mateusz Kojro}
+\date{\today}
+
+\begin{document}
+
+    \begin{frame}[plain]
+        \maketitle
+    \end{frame}
+
+    \begin{frame}{Kompresja bezstartna - Definicja}
+        \textbf{Algorytmy kompresji bezstratnej} - klasa algorytmów przekształcających ciąg
+        danych w inny - krótszy ciąg danych z ktorego możliwe jest nastepnie
+        odczytanie początkowych danych bez żadnych zmian
+    \end{frame}
+
+    
+    \begin{frame}{Kompresja bezstartna - Ograniczenia}
+        \begin{itemize}
+            \item \textbf{Uniwersalna bezstratna kompresja nie istnieje} - korzystając z tzw. Szufladkowej zasady Dirichleta w bardzo prosty sposób udowodnić można ze nie istnieje algorytm pozwalających na uniwersalne kompresowanie dowolnego ciągu danych. Bezstratne algorytmy danych kompresują zawsze tylko określony rodzaj danych (dane innego rodzaju po zastosowaniu danego algorytmu powiekszaja swój rozmiar).
+            \item \textbf{Dane losowe są niekompresowalne} - Kompletnie losowe dane nie dają sie kompresować (W teorii złożoności Kołmogorowa właśnie nie kompresowalne dane definiują losowość)
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{Metody pomiarów - Badane wartości}
+        \begin{itemize}
+            \item Czas kompresji ozn. $T_k$
+            \item Czas dekompresji ozn. $T_d$
+            \item Stosunek wielkości skompresowanego pliku do oryginalnego ozn. $C_r$
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{Metody pomiarów - Rodzaje danych}
+
+        Wszystkie algorytmy przetestowano na poniższych danych:
+
+        \begin{itemize}
+            \item Tekst po angielsku % (Makbet, Hamlet)
+            \item Zdjęcia PNG 
+            \item Pliki audio w formacie MP3
+            \item Dane wytworzone przez losowe maszyny Turinga - \url{http://mattmahoney.net/dc/uiq/}
+            \item Kolejne cyfry $\pi$ (Jako łatwo replikowalne źródło liczb losowych)
+        \end{itemize}
+
+
+        Dla każdego rodzaju testowano wycinki o rozmiarach $100$b, $500$b, $1$Kb, $50$Kb, $100$Kb
+    \end{frame}
+    
+
+    % \begin{frame}[plain,c]
+    %     \begin{center}
+    %         \Large Metoda naiwna
+    %     \end{center}
+    % \end{frame}
+
+    \begin{frame}[plain,c]
+        \begin{center}
+            \Large Run-length encoding (RLE)
+        \end{center}
+    \end{frame}
+
+    \begin{frame}{RLE - Zasada dzialania}
+        Algorytm RLE opiera się na zastępowaniu ciągu powtarzających się symboli alfabetu
+        przez symbol oraz ilość jego powturzeń.
+        
+        Na przykład:
+        Mając dany ciąg znaków: 
+        $$AAAAABBBBBCCCDDE$$ 
+        korzystając z najbardziej naiwnej odmiany algorytmu RLE moglibyśmy zapisać go jako:
+        $$5A5B3C2D1E$$
+
+        Dekompresja ciągu jest trywialna.
+    \end{frame}
+
+    \begin{frame}{RLE - Podsumowanie}
+        \begin{itemize}
+            \item Asymptotyczna złożoność czasowa: $O(n)$
+            \item Osiąga dobre wyniki przy niektórych obrazach kompresji obrazów bardzo słabe 
+            natomiast podczas kompresji tekstu
+            \item Stosowana jako jedna z metod w plikach JPEG
+        \end{itemize}
+    \end{frame}
+    
+
+    \begin{frame}[plain,c]
+        \begin{center}
+            \Large Kompresja LZW (Lempel-Ziv-Welch)
+        \end{center}
+    \end{frame}
+
+    
+    \begin{frame}{LZW - Zasada dzialania}
+        Kompresowanie słowa alfabetu z wykorzystaniem kompresji LZW opiera sie na rozszerzaniu początkowego alfabetu (standardowo $256$ znaków kodu ASCII) o dodatkowe symbole składające sie z kombinacji tych znaków. Jego zaleta jest fakt ze w celu dekompresji nie potrzebne jest przekazywanie żadnych dodatkowych danych oprócz ustalonego początkowego słownika.
+    \end{frame}
+
+    \begin{frame}{LZW - Podsumowanie}
+        \begin{itemize}
+            \item Stosowana jako domyślna kompresja w plikach PDF, GIF 
+            \item Domyślny algorytm kompresji w Unixowej funkcji compress
+            \item W profesjonalnych zastosowaniach stosowana w połączeniu z np kodowaniem Huffmana
+            \item Rozwinięcie starszego algorytmu LZ78
+        \end{itemize}
+
+        % \item Asymptotyczna złożoność kompresji: $O(n)$
+        % \item Asymptotyczna złożoność dekompresji: $O(n)$
+    \end{frame}
+
+
+    \begin{frame}[plain,c]
+        \begin{center}
+            \Large Kodowanie Huffmana
+        \end{center}
+    \end{frame}
+    
+    
+    \begin{frame}{Kodowanie Huffmana - Zasada dzialania}
+        \begin{enumerate}
+            \item Elementy sortowane są ze względu na częstość występowania
+            \item Tworzone jest drzewo binarne wszystkich symboli wykorzystanych w kompresowanym słowie
+            \item Słowo kodowane jest następnie jako indeksy wierzchołków drzewa, które jest przekazywane łącznie z zakodowanym słowem
+        \end{enumerate}
+    \end{frame}
+    
+        \begin{frame}{Kodowanie Huffmana - Podsumowanie}
+            \begin{itemize}
+                \item Jedna z najprostszych metod bezstratnej kompresji danych.
+                \item Udowodniona jako najbardziej optymalny algorytm kompresji bezstratnej (Podczas kompresji dzielącej strumień na pojedyncze symbole)
+                \item Istnieje rozszerzenie do przechowywania w drzewie słów zamiast symboli
+                \item W profesjonalnych zastosowaniach stosowana w połączeniu z np LZW
+                \item Asymptotyczna złożoność: $O(n\log{n})$
+            \end{itemize}
+        \end{frame}
+
+    \begin{frame}[plain,c]
+        \begin{center}
+            \Large Biblioteka Zlib
+        \end{center}
+    \end{frame}
+    
+    
+    \begin{frame}{Porównanie z Zlib}
+        W celu porównania prostych implementowanych algorytmów z de facto standardową biblioteka używana do kompresji danych (stosowana między innymi w kernelu linux, plikach PNG czy w serwerach Apache) dane testowe zostaną przekazane do biblioteki Zlib - \url{https://zlib.net/}
+    \end{frame}
+    
+\end{document}
+% Sprawdzić teoretyczna sprawność
+% mozę rozpisać bardziej dokladnie złożoność (Ile operacji jakiej wagi) niz O
+% Czym sie różnią algorytmy
+% 
+% Zależność złożoności od rożnych typów danych
+% Przypadek średni i przypadek pesymistyczny
+% Specyfika danych
+%
+% wnioski
