@@ -31,6 +31,15 @@
 *.out
 *.app
 
+.vscode/
+build/
+*.jpg
+*.txt
+prezentacja/
+!/prezentacja/presentation.tex
+!/prezentacja/presentation.pdf
+
+
 cmake-build-debug
 cmake-*
 .idea

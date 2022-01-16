@@ -16,15 +16,16 @@ std::string BitVector::ToAsciiString() const {
     char c = 0;
     // Loop over the bits of one char
     for (size_t j = 0; j < char_size; j++) {
-      c += static_cast<char>(Get(i + j) // We are creating a character here NOLINT(cppcoreguidelines-narrowing-conversions)
-          << j);
+      c += static_cast<char>(
+          GetBit(i + j) // We are creating a character here NOLINT(cppcoreguidelines-narrowing-conversions)
+              << j);
     }
     chars.push_back(c);
   }
   return chars;
 }
 
-bool BitVector::Get(size_t index) const {
+bool BitVector::GetBit(size_t index) const {
   size_t chunk_index = index / chunk_size_;
   size_t inner_index = index % chunk_size_;
   return bits_[chunk_index][inner_index];
@@ -71,6 +72,9 @@ void BitVector::PushBack(bool value) {
   }
   size_++;
 }
+//void BitVector::Reserve(int) {
+//  throw NotImplemented();
+//}
 
 }
 

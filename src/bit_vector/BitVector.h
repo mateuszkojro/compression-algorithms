@@ -18,11 +18,12 @@ class BitVector {
   explicit BitVector(size_t size);
   explicit BitVector(const std::string &text);
 
-  [[nodiscard]] bool Get(size_t index) const;
+  [[nodiscard]] bool GetBit(size_t index) const;
   [[nodiscard]] size_t Size() const;
   [[nodiscard]] std::string ToAsciiString() const;
 
   void Set(size_t index, bool value);
+  void Reserve(size_t new_size);
   void PushBack(bool value);
 
  private:

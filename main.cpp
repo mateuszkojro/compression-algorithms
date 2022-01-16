@@ -2,44 +2,28 @@
 // Created by dims_ on 13/10/2021.
 //
 
-#include <iostream>
+#include "Harness.h"
 #include "compression.h"
-#include "pm_include.h"
+#include "src/lzw/lzw.h"
+#include <iostream>
+
 int main() {
-  {
-  START_TRACER("x");
-  srand(10);
-  }
-  mk::BitVector vector(10);
-  for (int i = 0; i < vector.Size(); i++) {
-    vector.Set(i, rand() % 2); // NOLINT(cert-msc50-cpp)
-  }
+  HarnessConfig config;
 
-  for (int i = 0; i < vector.Size(); i++) {
-    std::cout << i << " => " << vector.Get(i) << std::endl;
-  }
+  // There is an infinite loop if file is to small
 
-  for (int i = 0; i < 10; i++) {
-    vector.PushBack(true); // NOLINT(cert-msc50-cpp)
-  }
+//  config.text_lengths = {20, 100, 1 KB, 2 KB, 100 KB, 116 KB};
+  config.text_lengths = { 1 KB};
+  config.number_of_repetitions = 1;
 
-  std::cout << std::endl << "After 10 pushbacks" << std::endl;
+  // WARN: Not cleaning up the executors
+  Harness h(config, {{"RLE", new Rle}, {"LZW", new Lzw}}, {"./makbet.txt", "./lena.jpg"});
 
-  for (int i = 0; i < vector.Size(); i++) {
-    std::cout << i << " => " << vector.Get(i) << std::endl;
-  }
+  h.Run();
 
-  mk::BitVector b(8);
-  int i = 0;
-  b.Set(i++, false); // Most significant
-  b.Set(i++, true);
-  b.Set(i++, false);
-  b.Set(i++, false);
-  b.Set(i++, false);
-  b.Set(i++, false);
-  b.Set(i++, true);
+  auto results = h.GetResults();
 
-  std::cout << "B: " << b.ToAsciiString() << std::endl;
-  SAVE_TRACINGS("xddd");
+  for (const auto &r: results) { std::cout << r << std::endl << std::endl; }
+
   return 0;
 }
