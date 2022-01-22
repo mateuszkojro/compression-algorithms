@@ -56,6 +56,7 @@ class Harness {
   ~Harness();
   void Run();
   const std::vector<BenchmarkRecord>& GetResults();
+  std::ostream & ToCSV(std::ostream& ostream);
 
  private:
   void RunOverDataset(const std::string& dataset_name,

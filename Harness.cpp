@@ -153,3 +153,31 @@ void Harness::RunOverDataset(
     }
   }
 }
+std::ostream & Harness::ToCSV(std::ostream &ostream) {
+  // Write headers
+  ostream << "success, "
+          << "executor_name, "
+          << "dataset_name, "
+          << "text_length, "
+          << "avg_compression_time, "
+          << "std_dev_compression_time, "
+          << "avg_decompression_time, "
+          << "std_dev_decompression_time, "
+          << "compression_ratio\n";
+
+  // Write content
+  // FIXME: I am not escaping comas
+  for (const auto &record: results_) {
+    ostream << record.success << ", "
+            << record.executor_name << ", "
+            << record.dataset_name << ", "
+            << record.text_length << ", "
+            << record.avg_compression_time << ", "
+            << record.std_dev_compression_time << ", "
+            << record.avg_decompression_time << ", "
+            << record.std_dev_decompression_time << ", "
+            << record.compression_ratio << "\n";
+  }
+
+  return ostream;
+}
