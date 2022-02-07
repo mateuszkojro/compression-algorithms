@@ -30,7 +30,7 @@ class BinaryTree {
 
   [[nodiscard]] T GetNodeValue(NodeId parent_id) const;
   void SetNode(NodeId node_id, T value);
-  void SetNode(NodeId node_id, const BinaryTree & tree, NodeId root_node);
+  void SetNode(NodeId node_id, const BinaryTree &tree, NodeId root_node);
 
   static NodeId RootNodeId();
   static std::pair<NodeId, NodeId> GetChildrenIds(NodeId parent_id);
@@ -42,7 +42,7 @@ class BinaryTree {
   bool HasValue(NodeId node_id) const;
   bool Exists(NodeId node_id);
 
-  // FIXME: I should create a real iterator but I need to do other things first
+  // FIXME: I should makr a real iterator but I need to do other things first
   std::vector<NodeId> NodeIterator();
 
  private:
@@ -51,7 +51,7 @@ class BinaryTree {
 };
 
 // ? how to store the tree
-class HuffmanCoding : public Compressor{
+class HuffmanCoding : public Compressor {
  public:
   TimeAndValue<void> Compress(const std::string &c_1) override;
   TimeAndValue<std::string> Decompress() override;
