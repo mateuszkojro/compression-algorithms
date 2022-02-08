@@ -13,7 +13,11 @@ int main() {
   config.text_lengths = {20, 100, 1 KB, 2 KB, 100 KB, 116 KB};
   config.number_of_repetitions = 100;
 
-  Harness harness(config, {{"RLE", new Rle}, {"LZW", new Lzw}}, {"./makbet.txt", "./lena.jpg"});
+  Harness harness
+      (config, {{"RLE", new Rle},
+                {"Huffman", new HuffmanCoding},
+                {"LZW", new Lzw}},
+       {"./makbet.txt", "./lena.jpg"});
 
   harness.Run();
 
