@@ -1,198 +1,143 @@
 #include "huffman_coding.h"
-
-#include <iostream>
-#include <unordered_map>
-#include <algorithm>
+#include <queue>
+#include <map>
 #include <cassert>
 
-// WARN: This function definitely can be optimized
-TimeAndValue<void> HuffmanCoding::Compress(const std::string &input_data) {
+template<class Type>
+struct FreqAndValue {
+  FreqAndValue(uint64_t freq, Type value) : freq(freq), value(value) {}
+  uint64_t freq;
+  Type value;
+};
 
+using FreqType = FreqAndValue<char>;
+using PriorityQueue = std::priority_queue<FreqType>;
+
+namespace std {
+template<>
+struct less<FreqType> {
+  bool operator()(const FreqType &a, const FreqType &b) const {
+    return a.freq > b.freq;
+  }
+};
+}
+
+PriorityQueue sort_by_freqs(const std::string &values) {
+  std::unordered_map<uint64_t, char> freq_map;
+  for (auto letter: values) {
+    freq_map[letter]++;
+  }
+
+  std::priority_queue<FreqType> sorted_que;
+  for (auto&[character, frequency]: freq_map) {
+    sorted_que.emplace(frequency, character);
+  }
+
+  return sorted_que;
+}
+
+template<class T>
+T pop(std::queue<T> &queue) {
+  auto elem = queue.front();
+  queue.pop();
+  return elem;
+}
+
+template<class T>
+std::vector<bool> join(const std::vector<T> a, const std::vector<T> b) {
+  std::vector<T> result = a;
+  result.reserve(a.size() + b.size());
+  for (auto elem: b) {
+    result.push_back(elem);
+  }
+  return result;
+}
+
+std::optional<std::vector<bool>> find_char(char chacracter, BinaryTreeNode *node) {
+  if (!node) {
+    return std::nullopt;
+  }
+
+  if (node->value.has_value() && node->value.value() == chacracter) {
+    return std::vector<bool>();
+  }
+
+  auto left = find_char(chacracter, node->left);
+  if (left.has_value()) {
+    auto value = left.value();
+    value.push_back(0);
+    return value;
+  }
+
+  auto right = find_char(chacracter, node->left);
+  if (right.has_value()) {
+    auto value = right.value();
+    value.push_back(1);
+    return value;
+  }
+
+  return std::nullopt;
+}
+
+TimeAndValue<void> HuffmanCoding::Compress(const std::string &text) {
   auto start = std::chrono::high_resolution_clock::now();
-  std::string data = input_data; // Copy here
-  mk::BitVector output_data;
-
-  // TODO: Instead of using an unordered map and then sorting we could just use std::map
-  // Count frequency of each char
-  std::unordered_map<char, unsigned> frequency_map;
-  for (char c: data) {
-    frequency_map[c]++;
+  std::queue<BinaryTreeNode *> nodes;
+  auto sorted_by_freq = sort_by_freqs(text);
+  while (!sorted_by_freq.empty()) {
+    auto elem = sorted_by_freq.top();
+    sorted_by_freq.pop();
+    nodes.push(new BinaryTreeNode(elem.value, elem.freq));
   }
 
-  // Sort by frequency
-  std::sort(data.begin(), data.end(), [&frequency_map](char c_1, char c_2) {
-    return frequency_map[c_1] > frequency_map[c_2];
-  });
+  while (nodes.size() != 1) {
+    auto *node1 = pop(nodes);
+    auto *node2 = pop(nodes);
 
-  std::vector<ProbabilityValuePair> pairs;
-  pairs.reserve(data.size());
-  for (size_t i = 0; i < data.size(); i++) {
-    // Items are sorted the way that the item that occurs the most is first on the list so the probability is p = size - i
-    double probability = data.size() - i; // WARNING: For rly huge strings this might bite us
-    pairs.emplace_back(probability, data[i]);
+    nodes.push(new BinaryTreeNode(node1->freq + node2->freq, node1, node2));
+  }
+  compressed_.reserve(text.size() * 8);
+  for (auto letter: text) {
+    auto maybe_code = find_char(letter, nodes.front());
+    assert(maybe_code.has_value());
+    compressed_ = join(compressed_, maybe_code.value());
   }
 
-  BinaryTree tree(std::ceil(std::log2(frequency_map.size())));
+  base_node_ = nodes;
 
-  size_t last_pair_start = pairs.size() - 1;
-  size_t itr = 0;
-  tree.SetNode(BinaryTree::RootNodeId(),
-               ProbabilityValuePair(pairs[0].probability + pairs[1].probability, '\0'));
+  auto stop = std::chrono::high_resolution_clock::now();
+  return TimeAndValue<void>(std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
+}
 
-  tree.InsertChild(0, BinaryTree::ChildType::LEFT, pairs[0]);
-  tree.InsertChild(0, BinaryTree::ChildType::RIGHT, pairs[1]);
-
-  std::vector<BinaryTree> trees;
-  trees.reserve(pairs.size());
-
-  for (auto pv: pairs) {
-    BinaryTree inner_tree;
-    inner_tree.SetNode(BinaryTree::RootNodeId(), pv);
-    trees.push_back(inner_tree);
+std::optional<char> decode_char(std::vector<bool> &encoded, BinaryTreeNode *base_node) {
+  auto *current_node = base_node;
+  for (size_t i = 0; i < encoded.size(); i++) {
+    if (encoded[i] == 0) {
+      current_node = current_node->left;
+    } else {
+      current_node = current_node->right;
+    }
+    encoded.erase(encoded.begin());
+    if (current_node->value.has_value()) {
+      return current_node->value.value();
+    }
   }
 
-  while (trees.size() > 1) {
-    size_t last_index = trees.size() - 1;
-
-    auto &current_tree = trees[last_index - 1];
-    auto[left, right] = BinaryTree::GetChildrenIds(BinaryTree::RootNodeId());
-
-    current_tree.InsertTree(left, BinaryTree::ChildType::LEFT, current_tree);
-    current_tree.InsertTree(right, BinaryTree::ChildType::RIGHT, trees[last_index]);
-    trees.pop_back();
-  }
-  //  tree_ = trees[0];
-  tree_ = BinaryTree(trees[0]); // Copy the resulting tree to the member filed
-
-  for (char c: data) {
-
-  }
-  auto end = std::chrono::high_resolution_clock::now();
-  return TimeAndValue<void>(
-      std::chrono::duration_cast<std::chrono::microseconds>(end - start));
+  return std::nullopt;
 }
 
 TimeAndValue<std::string> HuffmanCoding::Decompress() {
-  BinaryTree::NodeId current_node = 0;
-  std::string decompressed_string;
-  decompressed_string.reserve(compressed_stream_.Size() / 8);
   auto start = std::chrono::high_resolution_clock::now();
-
-  for (int i = 0; i < compressed_stream_.Size(); i++) {
-    if (auto maybe_node_value = tree_.GetNodeValue(current_node); maybe_node_value.has_value()) {
-      decompressed_string.push_back(maybe_node_value.value().value);
-      current_node = BinaryTree::RootNodeId();
-    }
-    // Traverse the tree
-    current_node = BinaryTree::GetChild(current_node, static_cast<BinaryTree::ChildType>(compressed_stream_.GetBit(i)));
-  }
-
-  auto end = std::chrono::high_resolution_clock::now();
-  return {decompressed_string,
-          std::chrono::duration_cast<std::chrono::microseconds>(end - start)};
+  std::string decompressed;
+  std::optional<char> result = std::nullopt;
+  do {
+    result = decode_char(compressed_, base_node_.front());
+    assert(result.has_value());
+    decompressed.push_back(result.value());
+  } while (result.has_value());
+  auto stop = std::chrono::high_resolution_clock::now();
+  return TimeAndValue<std::string>(decompressed, std::chrono::duration_cast<std::chrono::microseconds>(stop - start));
 }
 
-BinaryTree::BinaryTree(size_t depth) {
-  size_t vector_size = 2 * depth + 1; // One node means depth 0
-  ResizeStorage(vector_size);
-}
-
-void BinaryTree::ResizeStorage(size_t new_size) {
-  nodes_.reserve(new_size);
-  while (nodes_.size() < new_size) {
-    nodes_.emplace_back(std::nullopt);
-  }
-}
-
-BinaryTree::NodeId BinaryTree::InsertChild(NodeId parent_id, BinaryTree::ChildType type, T value) {
-  // FIXME: Check if the tree needs to be resized and do it if so
-  NodeId target_adress = GetChild(parent_id, type);
-  if (target_adress >= nodes_.size()) {
-    /*
-     * log2(x) - calculates to which power we need to rise 2 to get enough space
-     * then we need to increase it (because of 0 indexing)
-     * and ceil to get next integer. Then we just raise 2 to that power and get new array size
-     */
-    ResizeStorage(static_cast<size_t>(
-                      std::pow(2, std::ceil(std::log2(target_adress) + 1.0))));
-  }
-
-  SetNode(target_adress, value);
-  return target_adress;
-}
-
-std::pair<BinaryTree::NodeId, BinaryTree::NodeId> BinaryTree::GetChildrenIds(BinaryTree::NodeId parent_id) {
-  return std::make_pair(
-      GetChild(parent_id, ChildType::LEFT),
-      GetChild(parent_id, ChildType::RIGHT)
-  );
-}
-
-BinaryTree::T BinaryTree::GetNodeValue(BinaryTree::NodeId node_id) const {
-  return nodes_[node_id];
-}
-
-BinaryTree::NodeId BinaryTree::GetChild(BinaryTree::NodeId parent_id, BinaryTree::ChildType type) {
-  // Left node is at address 2*i + 1 and the right one is at 2*i+2,
-  // because of that we can just add the value for direction to avoid a conditional
-  return 2 * parent_id + 1 + static_cast<size_t> (type);
-}
-
-BinaryTree::NodeId BinaryTree::RootNodeId() {
-  return 0;
-}
-
-void BinaryTree::SetNode(BinaryTree::NodeId node_id, BinaryTree::T value) {
-  nodes_[node_id] = value;
-}
-
-// WARN: That is not tested
-void BinaryTree::SetNode(BinaryTree::NodeId node_id,
-                         const BinaryTree &tree,
-                         NodeId root_node = BinaryTree::RootNodeId()) {
-  SetNode(node_id, tree.GetNodeValue(root_node));
-  NodeId current_node_source = root_node;
-  NodeId current_node_target = node_id;
-
-  auto[source_left, source_right] = tree.GetChildrenIds(current_node_source);
-  auto[target_left, target_right] = GetChildrenIds(current_node_target);
-
-  // FIXME: we are double assigning here!! Need to take care of it l8er!!
-
-  if (auto left_value = tree.GetNodeValue(source_left)) {
-    InsertChild(target_left, BinaryTree::ChildType::LEFT, left_value);
-    SetNode(target_left, tree, source_left);
-  }
-
-  if (auto right_value = tree.GetNodeValue(source_left)) {
-    InsertChild(target_right, BinaryTree::ChildType::RIGHT, right_value);
-    SetNode(source_right, tree, source_right);
-  }
-}
-
-BinaryTree::NodeId BinaryTree::InsertTree(BinaryTree::NodeId parent_id,
-                                          BinaryTree::ChildType type,
-                                          const BinaryTree &tree) {
-  NodeId target_node = GetChild(parent_id, type);
-  SetNode(target_node, tree);
-  return target_node;
-}
-std::vector<BinaryTree::NodeId> BinaryTree::NodeIterator() {
-  assert(false);
-  std::vector<NodeId> existing_nodes;
-
-  for (int i = 0; i < nodes_.size(); i++) {
-    if (nodes_[i].has_value()) {
-      existing_nodes.push_back(i);
-    }
-  }
-  return existing_nodes;
-}
-
-bool BinaryTree::HasValue(BinaryTree::NodeId node_id) const {
-  return GetNodeValue(node_id).has_value();
-}
-
-bool BinaryTree::Exists(BinaryTree::NodeId node_id) {
-  return node_id < nodes_.size();
+size_t HuffmanCoding::CompressedSize() {
+  return compressed_.size() + base_node_.front()->size();
 }
